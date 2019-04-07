@@ -3,6 +3,7 @@
 .settings
 .DS_Store
 *.pyc
+/lib/*
 /data/*
 /images/*
 /images_test/*
