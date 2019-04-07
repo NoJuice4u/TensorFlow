@@ -6,7 +6,7 @@ import sys
 import argparse
 import tensorflow
 import numpy
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pyplot
 
 #Project Imports
 import lib.logger.logger as logger
@@ -54,21 +54,21 @@ def main(args):
         save_model(model, args.savemodel)
 
     i = 48
-    plt.figure(figsize=(6,3))
-    plt.subplot(1,2,1)
+    pyplot.figure(figsize=(6,3))
+    pyplot.subplot(1,2,1)
     plot_image(i, predictions, test_labels, test_images)
-    plt.subplot(1,2,2)
+    pyplot.subplot(1,2,2)
     plot_value_array(i, predictions, test_labels)
 
-    plt.show()
+    pyplot.show()
 
 def plot_image(i, predictions_array, true_label, img):
     predictions_array, true_label, img = predictions_array[i], true_label[i], img[i]
-    plt.grid(False)
-    plt.xticks([])
-    plt.yticks([])
+    pyplot.grid(False)
+    pyplot.xticks([])
+    pyplot.yticks([])
   
-    plt.imshow(img, cmap=plt.cm.binary)
+    pyplot.imshow(img, cmap=pyplot.cm.binary)
 
     predicted_label = numpy.argmax(predictions_array)
     if predicted_label == true_label:
@@ -76,18 +76,18 @@ def plot_image(i, predictions_array, true_label, img):
     else:
         color = 'red'
   
-    plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
+    pyplot.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
                                 100*numpy.max(predictions_array),
                                 class_names[true_label]),
                                 color=color)
 
 def plot_value_array(i, predictions_array, true_label):
     predictions_array, true_label = predictions_array[i], true_label[i]
-    plt.grid(False)
-    plt.xticks([])
-    plt.yticks([])
-    thisplot = plt.bar(range(10), predictions_array, color="#777777")
-    plt.ylim([0, 1]) 
+    pyplot.grid(False)
+    pyplot.xticks([])
+    pyplot.yticks([])
+    thisplot = pyplot.bar(range(10), predictions_array, color="#777777")
+    pyplot.ylim([0, 1]) 
     predicted_label = numpy.argmax(predictions_array)
  
     thisplot[predicted_label].set_color('red')
