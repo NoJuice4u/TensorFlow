@@ -3,7 +3,7 @@ import numpy
 import os
 import sys
 
-from logger import logger
+import lib.logger.logger as logger
 
 import Loader
 
@@ -21,15 +21,13 @@ def my_model_fn(features, labels, mode, params):
 #################################################
 
 logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
-trainingLoader = Loader.Loader(192, 192, 32)
+trainingLoader = Loader.Loader(96, 96, 32)
 training_image, training_label = trainingLoader.getDataSet(os.path.dirname(__file__) + "\images_training")
 
-testLoader = Loader.Loader(192, 192, 32)
+testLoader = Loader.Loader(96, 96, 32)
 test_image, test_label = testLoader.getDataSet(os.path.dirname(__file__) + "\images_test")
 
-logger.log("IMAGEBATCH", str(training_image))
-
-mobile_net = tensorflow.keras.applications.MobileNetV2(input_shape=(192, 192, 3), include_top=False)
+mobile_net = tensorflow.keras.applications.MobileNetV2(input_shape=(96, 96, 3), include_top=False)
 mobile_net.trainable=False
 
 feature_map_batch = mobile_net(training_image)
@@ -54,9 +52,9 @@ model.compile(optimizer=tensorflow.train.AdamOptimizer(),
 
 logger.log("MODEL SUMMARY", str(model.summary()))
 
-steps_per_epoch = tensorflow.ceil(len(trainingLoader.getFiles())/trainingLoader.getBatchSize()).numpy()
+steps_per_epoch = int(tensorflow.ceil(len(trainingLoader.getFiles())/trainingLoader.getBatchSize()).numpy())
 logger.log("#STEPS PER EPOCH#", str(steps_per_epoch))
-model.fit(trainingLoader.getDS(), epochs=3, steps_per_epoch=3, validation_data=(test_image, test_label))
+model.fit(trainingLoader.getDS(), epochs=10, steps_per_epoch=2, validation_data=(test_image, test_label))
 
 # model.fit(train_images, train_labels, epochs=args.epochs, validation_data = (test_images, test_labels), callbacks=[cp_callback])
 

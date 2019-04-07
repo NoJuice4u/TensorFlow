@@ -1,7 +1,7 @@
 import os
 import tensorflow
 
-from logger import logger
+import lib.logger.logger as logger
 
 '''
 COMMENTS

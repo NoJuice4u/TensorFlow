@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fe2f2757-090f-4d6e-a696-d48573f7cdaa</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>TensorFlow.py</StartupFile>
+    <StartupFile>Estimator.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

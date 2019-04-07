@@ -2,6 +2,7 @@
 .metadata
 .settings
 .DS_Store
+model.h5
 *.pyc
 /lib/*
 /data/*

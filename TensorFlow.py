@@ -9,7 +9,7 @@ import numpy
 import matplotlib.pyplot as plt
 
 #Project Imports
-from logger import logger
+import lib.logger.logger as logger
 #import Estimator
 
 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 
