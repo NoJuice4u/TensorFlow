@@ -1,0 +1,9 @@
+.idea
+.metadata
+.settings
+.DS_Store
+*.pyc
+/data/*
+/images/*
+/images_test/*
+/images_training/*
