@@ -2,6 +2,7 @@ import tensorflow
 import numpy
 import os
 import sys
+import matplotlib.pyplot as pyplot
 
 import lib.logger.logger as logger
 
@@ -18,11 +19,24 @@ def train_input_fn(features, labels, batch_size):
 def my_model_fn(features, labels, mode, params):
     logger.log("cat", "Cat")
 
+def plot_image(img):
+    pyplot.grid(False)
+    pyplot.xticks([])
+    pyplot.yticks([])
+  
+    pyplot.imshow(img, cmap=pyplot.cm.binary)
+
 #################################################
 
 logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
 trainingLoader = Loader.Loader(96, 96, 32)
 training_image, training_label = trainingLoader.getDataSet(os.path.dirname(__file__) + "\images_training")
+
+#pyplot.figure(figsize=(6,3))
+#pyplot.subplot(1,1,1)
+#plot_image(training_image[1])
+#pyplot.show()
+#quit()
 
 testLoader = Loader.Loader(96, 96, 32)
 test_image, test_label = testLoader.getDataSet(os.path.dirname(__file__) + "\images_test")

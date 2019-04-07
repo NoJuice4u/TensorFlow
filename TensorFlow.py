@@ -40,10 +40,8 @@ def main(args):
         model = create_model()
         model.load_weights(args.data)
 
-        loss, acc = model.evaluate(test_images, test_labels)
-        print("Restored model, accuracy: {:5.2f}%".format(100*acc))
-
     test_loss, test_acc = model.evaluate(test_images, test_labels)
+    logger.log("Accuracy", "{:5.2f}%".format(100*test_acc))
 
     flattenLayer = model.get_layer(index=1)
     logger.log('## LABEL_BATCH ##', str(flattenLayer.weights[0]))
@@ -117,7 +115,7 @@ if(__name__ == "__main__"):
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--train', type=bool, default=True,        help='Perform training')
     parser.add_argument('--data', type=str, default="data/weights",     help='Data file to Load/Save')
-    parser.add_argument('--epochs', type=int, default=12,           help='Number of training epochs')
+    parser.add_argument('--epochs', type=int, default=3,           help='Number of training epochs')
     parser.add_argument('--savemodel', type=str, default="model.h5",      help='Number of training epochs')
 
     args = parser.parse_args()
