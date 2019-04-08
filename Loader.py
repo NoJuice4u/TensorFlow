@@ -15,13 +15,17 @@ class Loader:
         self.files = []
 
     def getDataSet(self, path):
+        labelset = set()
         for r, d, f in os.walk(path):
             logger.log("Reading JPG Files", str(r))
             for file in f:
                 if '.jpg' in file:
+                    path = os.path.join(r, file)
+                    pos = os.path.dirname(path).rfind('\\') + 1
+                    labelset.add(os.path.dirname(path)[pos:])
                     self.files.append(os.path.join(r, file))
 
-        label_names = ['daisy', 'dandelion', 'roses', 'sunflowers', 'tulips']
+        label_names = list(labelset)
         label_to_index = dict((name, index) for index,name in enumerate(label_names))
         all_image_labels = []
         for path in self.files:
