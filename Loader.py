@@ -38,6 +38,8 @@ class Loader:
         label_ds = tensorflow.data.Dataset.from_tensor_slices(tensorflow.cast(all_image_labels, tensorflow.int32))
         image_label_ds = tensorflow.data.Dataset.zip((image_ds, label_ds))
 
+        self.imagePackage = image_label_ds
+
         logger.log('Image Shape', str(image_label_ds.output_shapes[0]))
 
         image_count = len(path)
@@ -74,3 +76,6 @@ class Loader:
 
     def getDS(self):
         return self.ds
+
+    def getImagePackage(self):
+        return self.imagePackage

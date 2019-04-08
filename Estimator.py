@@ -16,6 +16,9 @@ def train_input_fn(features, labels, batch_size):
 
     return dataset
 
+def change_range(image, label):
+    return 2*image-1, label
+
 def my_model_fn(features, labels, mode, params):
     logger.log("cat", "Cat")
 
@@ -29,7 +32,7 @@ def plot_image(img):
 #################################################
 
 logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
-trainingLoader = Loader.Loader(96, 96, 32)
+trainingLoader = Loader.Loader(192, 192, 32)
 training_image, training_label = trainingLoader.getDataSet(os.path.dirname(__file__) + "\images_training")
 
 #pyplot.figure(figsize=(6,3))
@@ -38,23 +41,29 @@ training_image, training_label = trainingLoader.getDataSet(os.path.dirname(__fil
 #pyplot.show()
 #quit()
 
-testLoader = Loader.Loader(96, 96, 32)
+testLoader = Loader.Loader(192, 192, 32)
 test_image, test_label = testLoader.getDataSet(os.path.dirname(__file__) + "\images_test")
 
-mobile_net = tensorflow.keras.applications.MobileNetV2(input_shape=(96, 96, 3), include_top=False)
+mobile_net = tensorflow.keras.applications.MobileNetV2(input_shape=(192, 192, 3), include_top=False)
 mobile_net.trainable=False
 
-feature_map_batch = mobile_net(training_image)
+keras_ds = trainingLoader.getDS().map(change_range)
+image_batch, label_batch = next(iter(keras_ds))
+
+feature_map_batch = mobile_net(image_batch)
 logger.log('## SHAPE ##', str(feature_map_batch.shape))
 
 model = tensorflow.keras.Sequential(
     [
         mobile_net,
+        #tensorflow.keras.layers.Flatten(input_shape=(196, 196))
+        #tensorflow.keras.layers.Dense(128, activation=tensorflow.nn.relu),
+        #tensorflow.keras.layers.Dense(10, activation=tensorflow.nn.softmax)
         tensorflow.keras.layers.GlobalAveragePooling2D(),
         tensorflow.keras.layers.Dense(len(training_label))
     ])
 
-logit_batch = model(training_image).numpy()
+logit_batch = model(image_batch).numpy()
 
 logger.log("min logit:", str(logit_batch.min()))
 logger.log("max logit:", str(logit_batch.max()))
@@ -68,7 +77,10 @@ logger.log("MODEL SUMMARY", str(model.summary()))
 
 steps_per_epoch = int(tensorflow.ceil(len(trainingLoader.getFiles())/trainingLoader.getBatchSize()).numpy())
 logger.log("#STEPS PER EPOCH#", str(steps_per_epoch))
-model.fit(trainingLoader.getDS(), epochs=10, steps_per_epoch=2, validation_data=(test_image, test_label))
+model.fit(trainingLoader.getDS(), epochs=3, steps_per_epoch=2, validation_data=(test_image, test_label))
+
+prediction = model.predict(testLoader.getDS(), steps=1)
+print(prediction[0])
 
 # model.fit(train_images, train_labels, epochs=args.epochs, validation_data = (test_images, test_labels), callbacks=[cp_callback])
 
