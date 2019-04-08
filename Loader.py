@@ -30,7 +30,8 @@ class Loader:
         all_image_labels = []
         for path in self.files:
             pos = os.path.dirname(path).rfind('\\') + 1
-            all_image_labels.append(label_to_index[os.path.dirname(path)[pos:]])
+            labelGroup = os.path.dirname(path)[pos:]
+            all_image_labels.append(label_to_index[labelGroup])
 
         path_ds = tensorflow.data.Dataset.from_tensor_slices(self.files)
         image_ds = path_ds.map(self.load_and_preprocess_image, num_parallel_calls=tensorflow.data.experimental.AUTOTUNE)
@@ -43,13 +44,7 @@ class Loader:
         logger.log('Image Shape', str(image_label_ds.output_shapes[0]))
 
         image_count = len(path)
-        ds = image_label_ds.shuffle(buffer_size=image_count)
-        ds = ds.repeat()
-        ds = ds.batch(self.batchSize)
-        ds = ds.prefetch(buffer_size=tensorflow.data.experimental.AUTOTUNE)
-
-        ds = image_label_ds.apply(tensorflow.data.experimental.shuffle_and_repeat(buffer_size=image_count))
-        ds = ds.batch(self.batchSize)
+        ds = image_label_ds.batch(self.batchSize)
         self.ds = ds.prefetch(buffer_size=tensorflow.data.experimental.AUTOTUNE)
 
         keras_ds = self.ds.map(self.change_range)
