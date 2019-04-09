@@ -23,23 +23,23 @@ def change_range(image, label):
 def my_model_fn(features, labels, mode, params):
     logger.log("cat", "Cat")
 
-def plot_image(i, predictions_array, true_label, img):
-    predictions_array, true_label, img = predictions_array[i], true_label[i], img[i]
+def plot_image(i, predictions_array, true_label, img, labels):
+    predictions_array, true_label, img = predictions_array[i], labels[true_label[i]], img[i]
     pyplot.grid(False)
     pyplot.xticks([])
     pyplot.yticks([])
   
     pyplot.imshow(img, cmap=pyplot.cm.binary)
 
-    predicted_label = numpy.argmax(predictions_array)
+    predicted_label = labels[numpy.argmax(predictions_array)]
     if predicted_label == true_label:
         color = 'blue'
     else:
         color = 'red'
   
-    pyplot.xlabel("{} {:2.0f}% ({})".format("Beef",
+    pyplot.xlabel("{} {:2.0f}% ({})".format(true_label,
                                 100*numpy.max(predictions_array),
-                                "BEUF"),
+                                predicted_label),
                                 color=color)
 
 def plot_value_array(i, predictions_array, true_label):
@@ -63,11 +63,14 @@ training_image, training_label = trainingLoader.getDataSet(os.path.dirname(__fil
 testLoader = Loader.Loader(192, 192, BATCH_SIZE)
 test_image, test_label = testLoader.getDataSet(os.path.dirname(__file__) + "\images_test")
 
+labelNames = testLoader.getLabelIndexArray()
+
 model = tensorflow.keras.Sequential(
     [
         tensorflow.keras.layers.Flatten(input_shape=(192, 192, 3)),
         tensorflow.keras.layers.Dense(192, activation=tensorflow.nn.relu),
-        tensorflow.keras.layers.Dense(5, activation=tensorflow.nn.softmax)
+        #tensorflow.keras.layers.GlobalAveragePooling2D(),
+        tensorflow.keras.layers.Dense(len(labelNames), activation=tensorflow.nn.softmax)
     ])
 
 model.compile(optimizer=tensorflow.train.AdamOptimizer(), 
@@ -78,19 +81,19 @@ logger.log("MODEL SUMMARY", str(model.summary()))
 
 steps_per_epoch = int(tensorflow.ceil(len(trainingLoader.getFiles())/trainingLoader.getBatchSize()).numpy())
 logger.log("#STEPS PER EPOCH#", str(steps_per_epoch))
-model.fit(trainingLoader.getDS(), epochs=10, steps_per_epoch=1, validation_data=testLoader.getDS(), validation_steps=1)
+model.fit(trainingLoader.getDS(), epochs=5, steps_per_epoch=5, validation_data=testLoader.getDS(), validation_steps=10)
 
-prediction = model.predict(testLoader.getDS(), steps=2)
+#prediction = model.predict(testLoader.getDS(), steps=32)
+prediction = model.predict(test_image, steps=8)
 
-for i in [2, 8, 12, 16, 22]:
+for i in range(0, 20):
     pyplot.figure(figsize=(6,3))
     pyplot.subplot(1,2,1)
-    plot_image(i, prediction, test_label, test_image)
+    print(prediction[i])
+    plot_image(i, prediction, test_label, test_image, labelNames)
     pyplot.subplot(1,2,2)
     plot_value_array(i, prediction, test_label)
     pyplot.show()
-
-input("Press Enter to continue...")
 
 # model.fit(train_images, train_labels, epochs=args.epochs, validation_data = (test_images, test_labels), callbacks=[cp_callback])
 

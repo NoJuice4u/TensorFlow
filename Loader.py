@@ -25,8 +25,8 @@ class Loader:
                     labelset.add(os.path.dirname(path)[pos:])
                     self.files.append(os.path.join(r, file))
 
-        label_names = list(labelset)
-        label_to_index = dict((name, index) for index,name in enumerate(label_names))
+        self.label_names = sorted(list(labelset))
+        label_to_index = dict((name, index) for index,name in enumerate(self.label_names))
         all_image_labels = []
         for path in self.files:
             pos = os.path.dirname(path).rfind('\\') + 1
@@ -36,7 +36,7 @@ class Loader:
         path_ds = tensorflow.data.Dataset.from_tensor_slices(self.files)
         image_ds = path_ds.map(self.load_and_preprocess_image, num_parallel_calls=tensorflow.data.experimental.AUTOTUNE)
 
-        label_ds = tensorflow.data.Dataset.from_tensor_slices(tensorflow.cast(all_image_labels, tensorflow.int32))
+        label_ds = tensorflow.data.Dataset.from_tensor_slices(tensorflow.cast(all_image_labels, tensorflow.int64))
         image_label_ds = tensorflow.data.Dataset.zip((image_ds, label_ds))
 
         self.imagePackage = image_label_ds
@@ -74,3 +74,6 @@ class Loader:
 
     def getImagePackage(self):
         return self.imagePackage
+
+    def getLabelIndexArray(self):
+        return self.label_names
