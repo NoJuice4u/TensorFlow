@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fe2f2757-090f-4d6e-a696-d48573f7cdaa</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Estimator.py</StartupFile>
+    <StartupFile>ImageConverter.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Estimator.py" />
+    <Compile Include="ImageConverter.py" />
     <Compile Include="Loader.py" />
     <Compile Include="TensorFlow.py" />
   </ItemGroup>

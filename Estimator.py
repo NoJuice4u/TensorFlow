@@ -67,10 +67,11 @@ labelNames = testLoader.getLabelIndexArray()
 
 model = tensorflow.keras.Sequential(
     [
-        tensorflow.keras.layers.Flatten(input_shape=(192, 192, 3)),
-        tensorflow.keras.layers.Dense(192, activation=tensorflow.nn.relu),
+        tensorflow.keras.layers.Conv2D(28, kernel_size=(3, 3), input_shape=(192, 192, 3)),
+        tensorflow.keras.layers.MaxPooling2D(pool_size=(2, 2))
+        #tensorflow.keras.layers.Dense(192, activation=tensorflow.nn.relu),
         #tensorflow.keras.layers.GlobalAveragePooling2D(),
-        tensorflow.keras.layers.Dense(len(labelNames), activation=tensorflow.nn.softmax)
+        #tensorflow.keras.layers.Dense(len(labelNames), activation=tensorflow.nn.softmax)
     ])
 
 model.compile(optimizer=tensorflow.train.AdamOptimizer(), 
