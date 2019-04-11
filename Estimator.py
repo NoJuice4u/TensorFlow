@@ -7,6 +7,7 @@ import matplotlib.pyplot as pyplot
 import lib.logger.logger as logger
 
 import Loader
+import ImageConverter
 
 BATCH_SIZE = 24
 tensorflow.enable_eager_execution()
@@ -65,27 +66,33 @@ test_image, test_label = testLoader.getDataSet(os.path.dirname(__file__) + "\ima
 
 labelNames = testLoader.getLabelIndexArray()
 
+trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", 256, 256)
+trainingSet.process()
+
+testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", 256, 256)
+testSet.process()
+
 model = tensorflow.keras.Sequential(
     [
-        tensorflow.keras.layers.Conv2D(28, kernel_size=(3, 3), input_shape=(192, 192, 3)),
-        tensorflow.keras.layers.MaxPooling2D(pool_size=(2, 2))
-        #tensorflow.keras.layers.Dense(192, activation=tensorflow.nn.relu),
-        #tensorflow.keras.layers.GlobalAveragePooling2D(),
+        tensorflow.keras.layers.Conv2D(28, kernel_size=(3, 3), input_shape=(256, 256, 3)),
+        #tensorflow.keras.layers.MaxPooling2D(pool_size=(2, 2))
+        #tensorflow.keras.layers.Dense(192, input_shape=(256, 256, 3))
         #tensorflow.keras.layers.Dense(len(labelNames), activation=tensorflow.nn.softmax)
     ])
 
 model.compile(optimizer=tensorflow.train.AdamOptimizer(), 
-              loss=tensorflow.keras.losses.sparse_categorical_crossentropy,
+              #loss=tensorflow.keras.losses.sparse_categorical_crossentropy,
+              loss=tensorflow.keras.losses.BinaryCrossentropy(),
               metrics=["accuracy"])
-
-logger.log("MODEL SUMMARY", str(model.summary()))
 
 steps_per_epoch = int(tensorflow.ceil(len(trainingLoader.getFiles())/trainingLoader.getBatchSize()).numpy())
 logger.log("#STEPS PER EPOCH#", str(steps_per_epoch))
-model.fit(trainingLoader.getDS(), epochs=5, steps_per_epoch=5, validation_data=testLoader.getDS(), validation_steps=10)
+model.fit(trainingSet.getDataSet(), epochs=5, steps_per_epoch=5, validation_data=testSet.getDataSet(), validation_steps=10)
+
+logger.log("MODEL SUMMARY", str(model.summary()))
 
 #prediction = model.predict(testLoader.getDS(), steps=32)
-prediction = model.predict(test_image, steps=8)
+prediction = model.predict(testSet, steps=8)
 
 for i in range(0, 20):
     pyplot.figure(figsize=(6,3))

@@ -13,22 +13,26 @@ class ImageConverter:
         self.x = x
         self.y = y
         self.path = path
+        self.dataset = None
 
     def process(self):
-        dataset = self.getDataSet()
+        self.dataset = self._buildDataSet()
 
-        pyplot.figure(figsize=(8, 8))
-        for image, label in dataset.take(3):
-            pyplot.imshow(image)
-            pyplot.grid(True)
-            pyplot.xticks([])
-            pyplot.yticks([])
-            pyplot.show()
+        #pyplot.figure(figsize=(8, 8))
+        #for image, label in dataset.take(3):
+        #    pyplot.imshow(image)
+        #    pyplot.grid(True)
+        #    pyplot.xticks([])
+        #    pyplot.yticks([])
+        #    pyplot.show()
 
     def _exportToPackage(self, exportFile):
         pass
 
     def getDataSet(self):
+        return self.dataset
+
+    def _buildDataSet(self):
         labelset = set()
         files = {}
         fileArray = []
@@ -75,7 +79,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        imageConverter = ImageConverter(args.path, 28, 28)
+        imageConverter = ImageConverter(args.path, 256, 256)
         imageConverter.process()
     except SystemExit as e:
         print(e) 
