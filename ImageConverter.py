@@ -7,19 +7,25 @@ import matplotlib.pyplot as pyplot
 
 import lib.logger.logger as logger
 
+tensorflow.enable_eager_execution()
 class ImageConverter:
-    def __init__(self, path):
+    def __init__(self, path, x, y):
+        self.x = x
+        self.y = y
         self.path = path
 
     def process(self):
-        ## EXAMPLE
-        files, labels_dictionary, labels_array = self.getFilesAndLabels()
-        ## Conversion
+        dataset = self.getDataSet()
 
-    def process_image(image):
-        image_decoded = tensorflow.image.decode_jpeg(image, channels=3)
+        pyplot.figure(figsize=(8, 8))
+        for image, label in dataset.take(4):
+            pyplot.imshow(image)
+            pyplot.grid(False)
+            pyplot.xticks([])
+            pyplot.yticks([])
+            pyplot.show()
 
-    def getFilesAndLabels(self):
+    def getDataSet(self):
         labelset = set()
         files = {}
         fileArray = []
@@ -45,16 +51,19 @@ class ImageConverter:
         
         filenames = tensorflow.constant(fileArray)
         labels = tensorflow.constant(all_image_labels)
+
         dataset = tensorflow.data.Dataset.from_tensor_slices((filenames, labels))
-        dataset = dataset.map(self._parse_function)
+        dataset = dataset.map(self._process_image)
 
-        return files, label_to_index, label_names
+        return dataset
 
-    def _parse_function(self, filename, label):
+    def _process_image(self, filename, label):
         image_string = tensorflow.read_file(filename)
-        image_decoded = tensorflow.image.decode_jpeg(image_string)
-        image_resized = tensorflow.image.resize_images(image_decoded, [28, 28])  # Parameterize the size
-        return image_resized, label
+        image_decoded = tensorflow.image.decode_jpeg(image_string, channels=3)
+        image_resized = tensorflow.image.resize_images(image_decoded, [self.x, self.y])  # Parameterize the size
+        result = tensorflow.cast(image_resized, tensorflow.float64)/255.0
+        
+        return result, label
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
@@ -63,6 +72,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        ImageConverter(args.path).process()
+        imageConverter = ImageConverter(args.path, 28, 28)
+        imageConverter.process()
     except SystemExit as e:
         print(e) 
