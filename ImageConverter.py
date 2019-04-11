@@ -9,7 +9,7 @@ import lib.logger.logger as logger
 
 tensorflow.enable_eager_execution()
 class ImageConverter:
-    def __init__(self, path, x, y):
+    def __init__(self, path, x, y, channels=3):
         self.x = x
         self.y = y
         self.path = path
@@ -18,12 +18,15 @@ class ImageConverter:
         dataset = self.getDataSet()
 
         pyplot.figure(figsize=(8, 8))
-        for image, label in dataset.take(4):
+        for image, label in dataset.take(3):
             pyplot.imshow(image)
-            pyplot.grid(False)
+            pyplot.grid(True)
             pyplot.xticks([])
             pyplot.yticks([])
             pyplot.show()
+
+    def _exportToPackage(self, exportFile):
+        pass
 
     def getDataSet(self):
         labelset = set()
