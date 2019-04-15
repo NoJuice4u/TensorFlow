@@ -1,4 +1,5 @@
 import tensorflow
+import math
 import numpy
 import os
 import sys
@@ -9,8 +10,9 @@ import lib.logger.logger as logger
 import Loader
 import ImageConverter
 
+# tensorflow.compat.v1.disable_v2_behavior()
+
 BATCH_SIZE = 24
-tensorflow.enable_eager_execution()
 
 def train_input_fn(features, labels, batch_size):
     dataset = tensorflow.data.Dataset.from_tensor_slices((dict(features), labels))
@@ -24,15 +26,15 @@ def change_range(image, label):
 def my_model_fn(features, labels, mode, params):
     logger.log("cat", "Cat")
 
-def plot_image(i, predictions_array, true_label, img, labels):
-    predictions_array, true_label, img = predictions_array[i], labels[true_label[i]], img[i]
+def plot_image(i, predictions_array, true_label, img):
+    predictions_array, true_label, img = predictions_array[i], "None", img[i]
     pyplot.grid(False)
     pyplot.xticks([])
     pyplot.yticks([])
   
-    pyplot.imshow(img, cmap=pyplot.cm.binary)
+    pyplot.imshow(img)
 
-    predicted_label = labels[numpy.argmax(predictions_array)]
+    predicted_label = "PREDIT"
     if predicted_label == true_label:
         color = 'blue'
     else:
@@ -55,52 +57,78 @@ def plot_value_array(i, predictions_array, true_label):
     thisplot[predicted_label].set_color('red')
     thisplot[true_label].set_color('blue')
 
+def get_activations(layer, stimuli):
+    units = sess.run(layer, feed_dict={'x':numpy.reshape(stimuli,[1, 7, 84], order='F'), 'rate':0.0})
+    plotNNFilter(units)
+
 #################################################
 
 logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
-trainingLoader = Loader.Loader(192, 192, BATCH_SIZE)
-training_image, training_label = trainingLoader.getDataSet(os.path.dirname(__file__) + "\images_training")
 
-testLoader = Loader.Loader(192, 192, BATCH_SIZE)
-test_image, test_label = testLoader.getDataSet(os.path.dirname(__file__) + "\images_test")
+trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", 28, 28)
+trainingImages, trainingLabels = trainingSet.process()
 
-labelNames = testLoader.getLabelIndexArray()
-
-trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", 256, 256)
-trainingSet.process()
-
-testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", 256, 256)
-testSet.process()
+testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", 28, 28)
+testImages, testLabels = testSet.process()
 
 model = tensorflow.keras.Sequential(
     [
-        tensorflow.keras.layers.Conv2D(28, kernel_size=(3, 3), input_shape=(256, 256, 3)),
-        #tensorflow.keras.layers.MaxPooling2D(pool_size=(2, 2))
-        #tensorflow.keras.layers.Dense(192, input_shape=(256, 256, 3))
-        #tensorflow.keras.layers.Dense(len(labelNames), activation=tensorflow.nn.softmax)
+        tensorflow.keras.layers.Flatten(input_shape=(28, 28)),  #Probably only possible when the image is single-channel
+        tensorflow.keras.layers.Dense(64, activation=tensorflow.nn.softmax),
+        tensorflow.keras.layers.Dense(24, activation=tensorflow.nn.softmax),
+        #tensorflow.keras.layers.Flatten(input_shape=(28, 28)),
+        tensorflow.keras.layers.Dense(10, activation=tensorflow.nn.softmax)
     ])
 
-model.compile(optimizer=tensorflow.train.AdamOptimizer(), 
-              #loss=tensorflow.keras.losses.sparse_categorical_crossentropy,
-              loss=tensorflow.keras.losses.BinaryCrossentropy(),
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              #loss=tensorflow.keras.losses.BinaryCrossentropy(),
               metrics=["accuracy"])
 
-steps_per_epoch = int(tensorflow.ceil(len(trainingLoader.getFiles())/trainingLoader.getBatchSize()).numpy())
-logger.log("#STEPS PER EPOCH#", str(steps_per_epoch))
-model.fit(trainingSet.getDataSet(), epochs=5, steps_per_epoch=5, validation_data=testSet.getDataSet(), validation_steps=10)
+checkpoint_path = "data/checkpoint.ckpt"
+checkpoint_dir = os.path.dirname(checkpoint_path)
+
+train = True
+if(train == True):
+    cp_callback = tensorflow.keras.callbacks.ModelCheckpoint(checkpoint_path, verbose=1)
+
+    model.fit(trainingImages, trainingLabels, epochs=5, validation_data = (testImages, testLabels))
+    model.save_weights("data/weights")
+else:
+    model.load_weights("data/weights")
 
 logger.log("MODEL SUMMARY", str(model.summary()))
 
-#prediction = model.predict(testLoader.getDS(), steps=32)
-prediction = model.predict(testSet, steps=8)
+prediction = model.predict(testImages, steps=32)
 
-for i in range(0, 20):
-    pyplot.figure(figsize=(6,3))
-    pyplot.subplot(1,2,1)
+weights = model.get_weights()
+
+FIG_COLS = 9
+for i in [0, 2000, 4000, 6000, 8000]:
+    pyplot.figure(figsize=(10,1))
+    pyplot.subplot(1,FIG_COLS,1)
     print(prediction[i])
-    plot_image(i, prediction, test_label, test_image, labelNames)
-    pyplot.subplot(1,2,2)
-    plot_value_array(i, prediction, test_label)
+    plot_image(i, prediction, trainingLabels, testImages)
+
+    activation = testImages[i]
+
+    for layer in model.layers:
+        print(layer)
+
+    for j in range(0, len(model.layers)-1):
+        logger.log(str(j), "GO")
+        pyplot.subplot(1,FIG_COLS,2+j)
+        layer = model.get_layer(index=j)
+        try:
+            activation = layer.apply(activation)
+            pyplot.imshow(activation)
+        except Exception as e:
+            logger.log(str(j) + ":APPLYFAIL", str(e))
+            pass
+        
+
+    pyplot.subplot(1,FIG_COLS,len(model.layers)+2)
+    plot_value_array(i, prediction, testLabels)
     pyplot.show()
 
 # model.fit(train_images, train_labels, epochs=args.epochs, validation_data = (test_images, test_labels), callbacks=[cp_callback])

@@ -1,5 +1,6 @@
 import os
 import tensorflow
+import matplotlib.image
 
 import lib.logger.logger as logger
 
@@ -28,7 +29,9 @@ class Loader:
         self.label_names = sorted(list(labelset))
         label_to_index = dict((name, index) for index,name in enumerate(self.label_names))
         all_image_labels = []
+        imgset = []
         for path in self.files:
+            imgset.append(matplotlib.image.imread(path)/255.0)
             pos = os.path.dirname(path).rfind('\\') + 1
             labelGroup = os.path.dirname(path)[pos:]
             all_image_labels.append(label_to_index[labelGroup])
@@ -36,7 +39,7 @@ class Loader:
         path_ds = tensorflow.data.Dataset.from_tensor_slices(self.files)
         image_ds = path_ds.map(self.load_and_preprocess_image, num_parallel_calls=tensorflow.data.experimental.AUTOTUNE)
 
-        label_ds = tensorflow.data.Dataset.from_tensor_slices(tensorflow.cast(all_image_labels, tensorflow.int64))
+        label_ds = tensorflow.data.Dataset.from_tensor_slices(tensorflow.cast(all_image_labels, tensorflow.int32))
         image_label_ds = tensorflow.data.Dataset.zip((image_ds, label_ds))
 
         self.imagePackage = image_label_ds
@@ -58,6 +61,7 @@ class Loader:
         image_decoded = tensorflow.image.decode_jpeg(image, channels=3)
         image_final = tensorflow.image.resize_images(image_decoded, [self.xRes, self.yRes])
         image_final = image_final/255.0
+
         return image_final
 
     def change_range(self, image, label):
