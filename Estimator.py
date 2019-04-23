@@ -61,7 +61,15 @@ def get_activations(layer, stimuli):
     units = sess.run(layer, feed_dict={'x':numpy.reshape(stimuli,[1, 7, 84], order='F'), 'rate':0.0})
     plotNNFilter(units)
 
-#################################################
+def create_dataset(data, labels, batch_size):
+    def gen():
+        for image, label in zip(data, labels):
+            yield image, label
+    ds = tensorflow.data.Dataset.from_generator(gen, (tensorflow.float32, tensorflow.int32), ((28, 28), ()))
+
+    return ds.repeat().batch(batch_size)
+
+################################################# 
 
 logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
 
@@ -70,6 +78,11 @@ trainingImages, trainingLabels = trainingSet.process()
 
 testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", 28, 28)
 testImages, testLabels = testSet.process()
+
+# train_set = create_dataset(trainingImages, trainingLabels, 10)
+# test_set = create_dataset(testImages, testLabels, 20)
+
+# print(train_set)
 
 model = tensorflow.keras.Sequential(
     [
@@ -86,9 +99,9 @@ model.compile(optimizer='adam',
               metrics=["accuracy"])
 
 checkpoint_path = "data/checkpoint.ckpt"
-checkpoint_dir = os.path.dirname(checkpoint_path)
+checkpoint_dir = os.path.dirname(checkpoint_path) 
 
-train = True
+train = False
 if(train == True):
     cp_callback = tensorflow.keras.callbacks.ModelCheckpoint(checkpoint_path, verbose=1)
 
@@ -104,8 +117,9 @@ prediction = model.predict(testImages, steps=32)
 weights = model.get_weights()
 
 FIG_COLS = 9
-for i in [0, 2000, 4000, 6000, 8000]:
-    pyplot.figure(figsize=(10,1))
+
+for i in [0, 1000, 2000, 3000, 4000, 6000, 8000]:
+    pyplot.figure(figsize=(14,3))
     pyplot.subplot(1,FIG_COLS,1)
     print(prediction[i])
     plot_image(i, prediction, trainingLabels, testImages)
@@ -125,7 +139,6 @@ for i in [0, 2000, 4000, 6000, 8000]:
         except Exception as e:
             logger.log(str(j) + ":APPLYFAIL", str(e))
             pass
-        
 
     pyplot.subplot(1,FIG_COLS,len(model.layers)+2)
     plot_value_array(i, prediction, testLabels)
