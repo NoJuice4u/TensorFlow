@@ -1,9 +1,10 @@
 import argparse
 import os
 import sys
-
-import matplotlib.pyplot as pyplot
+import matplotlib
 import matplotlib.image
+import matplotlib.pyplot as pyplot
+
 import tensorflow
 import numpy
 
@@ -36,28 +37,26 @@ class ImageConverter:
     def _buildDataSet(self):
         labelset = {}
         files = {}
-        fileArray = []
         labelArray = []
-        all_image_labels = []
+        resultNormalArray = []
 
         imgset = []
         for r, d, f in os.walk(self.path):
-            logger.log("Reading JPG Files", str(r))
+            logger.log("Reading PNG Files", str(r))
             for file in f:
-                if '.jpg' in file:
+                if '.png' in file:
+                    logger.log("File: ", str(file))
                     path = os.path.join(r, file)
-                    imgset.append(matplotlib.image.imread(path)/255.0)
-                    pos = os.path.dirname(path).rfind('\\') + 1
-                    labelGroup = os.path.dirname(path)[pos:]
-                    if(labelGroup not in labelset):
-                        labelArray.append(labelGroup)
-                        labelset[labelGroup] = len(labelArray)-1
-                    all_image_labels.append(labelset[labelGroup])
-
-                    fileArray.append(os.path.join(r, file))
+                    if(file[0:3] == "SRC"):
+                        img = matplotlib.image.imread(path)
+                        imgset.append(img)
+                    elif(file[0:3] == "TAR"):
+                        labelArray.append(matplotlib.image.imread(path))
+                    else:
+                        pass
 
         imgsetNPARR = numpy.asarray(imgset)
-        labelsetNPARR = numpy.asarray(all_image_labels)
+        labelsetNPARR = numpy.asarray(labelArray)
 
         pos = self.path.rfind('\\') + 1
         labelGroup = self.path[pos:]
@@ -65,7 +64,7 @@ class ImageConverter:
         numpy.save('data\\' + labelGroup + '_images', imgsetNPARR)
         numpy.save('data\\' + labelGroup + '_labels', labelsetNPARR)
 
-        # Map labelset with all_image_labels
+        # Map labelset with resultNormalArray
         images_tensor = tensorflow.convert_to_tensor(imgsetNPARR)
         labels_tensor = tensorflow.convert_to_tensor(labelsetNPARR)  ## USE INTEGER
 
@@ -80,7 +79,7 @@ class ImageConverter:
         imgsetNPARR = numpy.load(images + ".npy")
         labelsetNPARR = numpy.load(labels + ".npy")
 
-        # Map labelset with all_image_labels
+        # Map labelset with resultNormalArray
         images_tensor = tensorflow.convert_to_tensor(imgsetNPARR)
         labels_tensor = tensorflow.convert_to_tensor(labelsetNPARR)  ## USE INTEGER
 

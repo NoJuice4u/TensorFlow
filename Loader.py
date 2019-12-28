@@ -1,6 +1,5 @@
 import os
 import tensorflow
-import matplotlib.image
 
 import lib.logger.logger as logger
 
