@@ -42,10 +42,10 @@ class ImageConverter:
 
         imgset = []
         for r, d, f in os.walk(self.path):
-            logger.log("Reading PNG Files", str(r))
+            logger.log("READING FILES", str(r))
             for file in f:
                 if '.png' in file:
-                    logger.log("File: ", str(file))
+                    logger.log("FILE", str(file))
                     path = os.path.join(r, file)
                     if(file[0:3] == "SRC"):
                         img = matplotlib.image.imread(path)

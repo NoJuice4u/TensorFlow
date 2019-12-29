@@ -30,7 +30,7 @@ class VisualizerCB(tensorflow.keras.callbacks.Callback):
         l4 = logger.YELLOW if(OLD_VACC == logs["val_accuracy"]) else logger.GREEN if(OLD_VACC < logs["val_accuracy"]) else logger.RED
 
         # logger.log(str(epoch), str("Loss: " + l1 + str(logs["loss"]).ljust(25) + logger.RESET + " Accuracy: " + l2 + str(logs["accuracy"]).ljust(15) + logger.RESET + " Val_Loss: " + l3 + str(logs["val_loss"]).ljust(25) + logger.RESET + " Val_Accuracy: " + l4 + str(logs["val_accuracy"]).ljust(15) + logger.RESET))
-        logger.log(str(epoch), str(", " + l1 + str(logs["loss"]) + logger.RESET + ", " + l2 + str(logs["accuracy"]) + logger.RESET + ", " + l3 + str(logs["val_loss"]) + logger.RESET + ", " + l4 + str(logs["val_accuracy"]) + logger.RESET))
+        logger.log(logger.CYAN + str(epoch) + logger.RESET, str(", " + l1 + str(logs["loss"]) + logger.RESET + ", " + l2 + str(logs["accuracy"]) + logger.RESET + ", " + l3 + str(logs["val_loss"]) + logger.RESET + ", " + l4 + str(logs["val_accuracy"]) + logger.RESET))
         OLD_LOSS = logs["loss"]
         OLD_ACC = logs["accuracy"]
         OLD_VLOSS = logs["val_loss"]
@@ -51,7 +51,7 @@ class MyModelV2(tensorflow.keras.Model):
             ]
         
         self.y = [
-            tensorflow.keras.layers.Conv2D(4, (4, 4), strides=(2, 2), activation=tensorflow.nn.relu),
+            tensorflow.keras.layers.Conv2D(4, (4, 4), strides=(2, 2), activation=tensorflow.nn.sigmoid),
             tensorflow.keras.layers.MaxPooling2D(pool_size=(4, 4), strides=(2, 2)),
             tensorflow.keras.layers.Conv2DTranspose(4, (22, 22), strides=(2, 2))
             ]
@@ -116,12 +116,11 @@ if gpus:
            tensorflow.config.experimental.set_memory_growth(gpu, True)
         tensorflow.config.experimental.set_visible_devices(gpus[0], 'GPU')
         logical_gpus = tensorflow.config.experimental.list_logical_devices('GPU')
-        logger.log("GPU", str(len(gpus)) + " Physical GPUs, " + str(len(logical_gpus)) + " Logical GPU")
-        logger.log("Physical GPU", str(len(gpus)))
-        logger.log("Logical GPU", str(len(logical_gpus)))
+        logger.log(logger.BLUE + "Physical GPU" + logger.RESET, str(len(gpus)))
+        logger.log(logger.BLUE + "Logical GPU" + logger.RESET, str(len(logical_gpus)))
     except RuntimeError as e:
         # Visible devices must be set before GPUs have been initialized
-        logger.log("EXCEPTIONY", str(e))
+        logger.log(logger.RED + "EXCEPTIONY" + logger.RESET, str(e))
 
 trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", 32, 32)
 trainingImages, trainingLabels = trainingSet.process(True)
@@ -146,12 +145,12 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 train = True
 if(train == True):
-    logger.log("Train", "TN")
+    logger.log("Train", "Training Start!")
     model.load_weights('data/weights')
     model.compile(optimizer='adam',
               loss=tensorflow.keras.losses.Huber(),
               metrics=["accuracy"])
-    model.fit(trainingImages, trainingLabels, verbose=0, shuffle=True, epochs=2000, validation_data=(testImages, testLabels), workers=8, use_multiprocessing=True, callbacks=[VisualizerCB()])
+    model.fit(trainingImages, trainingLabels, verbose=0, shuffle=True, epochs=10000, validation_data=(testImages, testLabels), workers=8, use_multiprocessing=True, callbacks=[VisualizerCB()])
     #model.fit(trainingImages, trainingLabels, verbose=0, shuffle=True, epochs=300, validation_data=(testImages, testLabels), workers=8, use_multiprocessing=True)
     model.save_weights("data/weights")
 else:
