@@ -45,7 +45,7 @@ class ImageConverter:
             logger.log(logger.MAGENTA + "READING FILES" + logger.RESET, str(r))
             for file in f:
                 if '.png' in file:
-                    logger.log(logger.GREEN + "FILE" + logger.RESTET, str(file))
+                    logger.log(logger.GREEN + "FILE" + logger.RESET, str(file))
                     path = os.path.join(r, file)
                     if(file[0:3] == "SRC"):
                         img = matplotlib.image.imread(path)
