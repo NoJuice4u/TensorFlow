@@ -1,7 +1,6 @@
 import tensorflow
 import math
 import numpy
-import png
 import os
 import sys
 import matplotlib.pyplot as pyplot
