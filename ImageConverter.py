@@ -27,7 +27,7 @@ class ImageConverter:
 
     def getDataSet(self):
         return self.dataset
-
+     
     def setDataSet(self, images_tensor, labels_tensor):
         images_ds = tensorflow.data.Dataset.from_tensor_slices(images_tensor)
         labels_ds = tensorflow.data.Dataset.from_tensor_slices(tensorflow.cast(labels_tensor, tensorflow.int32))

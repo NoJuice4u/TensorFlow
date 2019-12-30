@@ -1,6 +1,7 @@
 import tensorflow
 import math
 import numpy
+import png
 import os
 import sys
 import matplotlib.pyplot as pyplot
@@ -12,13 +13,16 @@ import ImageConverter
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-BATCH_SIZE = 24
+BATCH_SIZE = 256
 
 ################################################# 
 OLD_LOSS = 100.0
 OLD_ACC = 0.0
 OLD_VLOSS = 100.0
 OLD_VACC = 0.0
+
+TRAIN = False
+EPOCHS = 1000
 
 class VisualizerCB(tensorflow.keras.callbacks.Callback): 
     def on_epoch_end(self, epoch, logs={}): 
@@ -40,72 +44,67 @@ class MyModelV2(tensorflow.keras.Model):
     def __init__(self):
         super(MyModelV2, self).__init__()
 
-        self.lyr = [
-            tensorflow.keras.layers.Dense(4, activation=tensorflow.nn.relu)
-            ]
+        self.lyr = {
+            "lyr": [
+                tensorflow.keras.layers.Dense(4, activation=tensorflow.nn.relu)
+                ]
+            }
 
-        self.x = [
-            tensorflow.keras.layers.Conv2D(4, (2, 2), strides=(1, 1), activation=tensorflow.nn.relu),
-            tensorflow.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)),
-            tensorflow.keras.layers.Conv2DTranspose(4, (4, 4), strides=(2, 2))
+        self.parallelLayers = {
+            "x": [
+                tensorflow.keras.layers.Conv2D(4, 2, strides=1, activation=tensorflow.nn.log_softmax),
+                #tensorflow.keras.layers.MaxPooling2D(pool_size=2, strides=2),
+                tensorflow.keras.layers.Conv2DTranspose(4, 2, strides=1),
+            ],
+            "y": [
+                tensorflow.keras.layers.Conv2D(4, 2, strides=1, activation=tensorflow.nn.sigmoid),
+                #tensorflow.keras.layers.MaxPooling2D(pool_size=2, strides=2),
+                tensorflow.keras.layers.Conv2DTranspose(4, 2, strides=1)
+            ],
+            "z": [
+                tensorflow.keras.layers.Conv2D(4, 2, strides=1, activation=tensorflow.nn.selu),
+                #tensorflow.keras.layers.MaxPooling2D(pool_size=2, strides=2),
+                tensorflow.keras.layers.Conv2DTranspose(4, 2, strides=1)
             ]
-        
-        self.y = [
-            tensorflow.keras.layers.Conv2D(4, (4, 4), strides=(2, 2), activation=tensorflow.nn.sigmoid),
-            tensorflow.keras.layers.MaxPooling2D(pool_size=(4, 4), strides=(2, 2)),
-            tensorflow.keras.layers.Conv2DTranspose(4, (22, 22), strides=(2, 2))
-            ]
+        }
 
     def call(self, inputs):
-        x = self.x[0](inputs)
-        x = tensorflow.nn.dropout(x, 0.3)
-        x = self.x[1](x)
-        x = self.x[2](x)
+        tensors = []
+        idx = 0
+        for t in self.parallelLayers:
+            tensors.append(self.parallelLayers[t][0](inputs))
+            for i in range(1, len(self.parallelLayers[t])):
+                tensors[idx] = self.parallelLayers[t][i](tensors[idx])
+            idx += 1
 
-        y = self.y[0](inputs)
-        x = tensorflow.nn.dropout(x, 0.1)
-        y = self.y[1](y)
-        y = self.y[2](y)
+        combined = tensorflow.concat(tensors, 3)
 
-        combined = tensorflow.concat([x, y], 3)
-
-        return self.lyr[0](combined)
+        return self.lyr["lyr"][0](combined)
 
     def getResult(self, x, y, p, images):
-        for i in self.x:
-            try:
-                img = i.call(images[0:20]) #self.get_layer(index=i).call(images[0:20])
-                pyplot.subplot(x,y,p)
-                pyplot.imshow(img[10])
-                logger.log("MyModelX", str(logger.GREEN + "RENDER" + logger.RESET))
-            except Exception as e:
-                logger.log("MyModelX", str(logger.RED + str(e) + logger.RESET))
+        for t in self.parallelLayers:
+            for i in self.parallelLayers[t]:
+                try:
+                    img = i.call(images) #self.get_layer(index=i).call(images[0:20])
+                    pyplot.subplot(x,y,p)
+                    pyplot.imshow(img[0])
+                    logger.log("Model[" + str(t) + "]", str(logger.GREEN + "RENDER" + logger.RESET))
+                except Exception as e:
+                    logger.log("Model[" + str(t) + "]", str(logger.RED + str(e) + logger.RESET))
+                p += 1
             p += 1
 
-        p += 1
-
-        for i in self.y:
-            try:
-                img = i.call(images[0:20]) #self.get_layer(index=i).call(images[0:20])
-                pyplot.subplot(x,y,p)
-                pyplot.imshow(img[10])
-                logger.log("MyModelY", str(logger.GREEN + "RENDER" + logger.RESET))
-            except Exception as e:
-                logger.log("MyModelY", str(logger.RED + str(e) + logger.RESET))
+        for t in self.lyr:
+            for i in self.lyr[t]:
+                try:
+                    img = i.call(images) #self.get_layer(index=i).call(images[0:20])
+                    pyplot.subplot(x,y,p)
+                    pyplot.imshow(img[0])
+                    logger.log("Model[" + str(t) + "]", str(logger.GREEN + "RENDER" + logger.RESET))
+                except Exception as e:
+                    logger.log("Model[" + str(t) + "]", str(logger.RED + str(e) + logger.RESET))
+                p += 1
             p += 1
-
-        p += 1
-
-        for i in self.lyr:
-            try:
-                img = i.call(images[0:20]) #self.get_layer(index=i).call(images[0:20])
-                pyplot.subplot(x,y,p)
-                pyplot.imshow(img[10])
-                logger.log("MyModelZ", str(logger.GREEN + "RENDER" + logger.RESET))
-            except Exception as e:
-                logger.log("MyModelZ", str(logger.RED + str(e) + logger.RESET))
-            p += 1
-
 
 logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
 
@@ -122,16 +121,16 @@ if gpus:
         # Visible devices must be set before GPUs have been initialized
         logger.log(logger.RED + "EXCEPTIONY" + logger.RESET, str(e))
 
-trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", 32, 32)
+trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", BATCH_SIZE, BATCH_SIZE)
 trainingImages, trainingLabels = trainingSet.process(True)
  
 pyplot.figure(figsize=(4,2))
-pyplot.subplot(3,8,1)
+pyplot.subplot(4,8,1)
 pyplot.imshow(trainingImages[0])
-pyplot.subplot(3,8,2)
+pyplot.subplot(4,8,2)
 pyplot.imshow(trainingLabels[0])
 
-testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", 32, 32)
+testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", BATCH_SIZE, BATCH_SIZE)
 testImages, testLabels = testSet.process(True)
 
 # beef = tensorflow.concat([1, 2], 0)
@@ -143,14 +142,13 @@ model = MyModelV2()
 checkpoint_path = "data/checkpoint.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path) 
 
-train = True
-if(train == True):
+if(TRAIN == True):
     logger.log("Train", "Training Start!")
     model.load_weights('data/weights')
     model.compile(optimizer='adam',
               loss=tensorflow.keras.losses.Huber(),
               metrics=["accuracy"])
-    model.fit(trainingImages, trainingLabels, verbose=0, shuffle=True, epochs=10000, validation_data=(testImages, testLabels), workers=8, use_multiprocessing=True, callbacks=[VisualizerCB()])
+    model.fit(trainingImages, trainingLabels, verbose=0, shuffle=True, batch_size=1024, epochs=EPOCHS, validation_data=(testImages, testLabels), workers=24, use_multiprocessing=True, callbacks=[VisualizerCB()])
     #model.fit(trainingImages, trainingLabels, verbose=0, shuffle=True, epochs=300, validation_data=(testImages, testLabels), workers=8, use_multiprocessing=True)
     model.save_weights("data/weights")
 else:
@@ -162,17 +160,18 @@ else:
 
 # logger.log("MODEL SUMMARY", str(model.summary()))
 
-prediction = model.predict(testImages[0:20], steps=42)
+predictSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images", BATCH_SIZE, BATCH_SIZE)
+predictImages, junk = predictSet.process(True)
 
-model.getResult(3, 8, 9, testImages[0:20])
+prediction = model.predict(predictImages, steps=42)
+
+model.getResult(4, 8, 9, predictImages)
 
 pIndex = 0
 
-pyplot.subplot(3,8,22)
-pyplot.imshow(testImages[0])
+pyplot.subplot(4,8,22)
+pyplot.imshow(predictImages[0])
 
-pyplot.subplot(3,8,23)
+pyplot.subplot(4,8,23)
 pyplot.imshow(prediction[pIndex])
 pyplot.show()
-
-FIG_COLS = 9
