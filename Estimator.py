@@ -106,7 +106,7 @@ class MyModelV2(tensorflow.keras.Model):
                 p += 1
             p += 1
 
-logger.log("TENSORFLOW_VERSION", str(tensorflow.__version__))
+logger.log(logger.WHITE + "TENSORFLOW_VERSION" + logger.RESET, str(tensorflow.__version__))
 
 gpus = tensorflow.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -121,17 +121,19 @@ if gpus:
         # Visible devices must be set before GPUs have been initialized
         logger.log(logger.RED + "EXCEPTIONY" + logger.RESET, str(e))
 
-trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", BATCH_SIZE, BATCH_SIZE)
-trainingImages, trainingLabels = trainingSet.process(True)
- 
 pyplot.figure(figsize=(4,2))
-pyplot.subplot(4,8,1)
-pyplot.imshow(trainingImages[0])
-pyplot.subplot(4,8,2)
-pyplot.imshow(trainingLabels[0])
 
-testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", BATCH_SIZE, BATCH_SIZE)
-testImages, testLabels = testSet.process(True)
+if(TRAIN == True):
+    trainingSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_training", BATCH_SIZE, BATCH_SIZE)
+    trainingImages, trainingLabels = trainingSet.process(True)
+ 
+    pyplot.subplot(4,8,1)
+    pyplot.imshow(trainingImages[0])
+    pyplot.subplot(4,8,2)
+    pyplot.imshow(trainingLabels[0])
+
+    testSet = ImageConverter.ImageConverter(os.path.dirname(__file__) + "\images_test", BATCH_SIZE, BATCH_SIZE)
+    testImages, testLabels = testSet.process(True)
 
 # beef = tensorflow.concat([1, 2], 0)
 
