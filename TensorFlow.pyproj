@@ -24,6 +24,9 @@
     <Compile Include="Estimator.py" />
     <Compile Include="ImageConverter.py" />
     <Compile Include="Loader.py" />
+    <Compile Include="PNGWriter.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="TensorFlow.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
