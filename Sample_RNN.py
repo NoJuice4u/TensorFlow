@@ -85,7 +85,11 @@ class MyModelV2(tensorflow.keras.Model):
 
         self.lyr = {
             "lyr": [
-                tensorflow.keras.layers.RNN([ MyRNNCell(256), MyRNNCell(128), MyRNNCell(64), MyRNNCell(32), MyRNNCell(20) ])
+                tensorflow.keras.layers.RNN([ tensorflow.keras.layers.LSTMCell(256, activation=tensorflow.nn.tanh), 
+                                             tensorflow.keras.layers.LSTMCell(128, activation=tensorflow.nn.tanh), 
+                                             tensorflow.keras.layers.LSTMCell(64, activation=tensorflow.nn.tanh), 
+                                             tensorflow.keras.layers.LSTMCell(32, activation=tensorflow.nn.tanh), 
+                                             tensorflow.keras.layers.LSTMCell(20, activation=tensorflow.nn.tanh) ])
                 ]
             }
 
