@@ -53,12 +53,6 @@ class VisualizerCB(tensorflow.keras.callbacks.Callback):
         # logger.log(str(epoch), str("Loss: " + l1 + str(logs["loss"]).ljust(25) + logger.RESET + " Accuracy: " + l2 + str(logs["accuracy"]).ljust(15) + logger.RESET + " Val_Loss: " + l3 + str(logs["val_loss"]).ljust(25) + logger.RESET + " Val_Accuracy: " + l4 + str(logs["val_accuracy"]).ljust(15) + logger.RESET))
         logger.log(logger.CYAN + str(epoch) + logger.RESET, str(", " + l1 + str(logs["loss"]) + logger.RESET + ", " + l2 + str(logs["accuracy"]) + logger.RESET + ", " + l3 + str(logs["val_loss"]) + logger.RESET + ", " + l4 + str(logs["val_accuracy"]) + logger.RESET) + ", " + l5 + str(lossDeltaPercentage) + logger.RESET)
 
-        if(epoch % (EPOCHS/10) == 0):
-            prediction = model.predict(predictImages, steps=42)
-            pyplot.subplot(4,8,NPOS)
-            pyplot.imshow(prediction[0])
-            NPOS += 1
-
         LOSS_DELTA = newLossDelta
         ACC_DELTA = newAccDelta
 
@@ -67,15 +61,33 @@ class VisualizerCB(tensorflow.keras.callbacks.Callback):
         OLD_VLOSS = logs["val_loss"]
         OLD_VACC = logs["val_accuracy"]
 
+class MyRNNCell(tensorflow.keras.layers.Layer):
+    def __init__(self, units, **kwargs):
+        self.units = units
+        self.state_size = units
+        super(MyRNNCell, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.kernel = self.add_weight(shape=(input_shape[-1], self.units), initializer='uniform', name='kernel')
+        self.recurrent_kernel = self.add_weight(shape=(self.units, self.units), initializer='uniform', name='recurrent_kernel')
+        self.built = True
+
+    def call(self, inputs, states):
+        prev_output = states[0]
+        h = tensorflow.keras.backend.dot(inputs, self.kernel)
+        output = h + tensorflow.keras.backend.dot(prev_output, self.recurrent_kernel)
+
+        return output, [output]
+
 class MyModelV2(tensorflow.keras.Model):
     def __init__(self):
         super(MyModelV2, self).__init__()
 
-        self.lyr = [
-                tensorflow.keras.layers.Dense(32),
-                tensorflow.keras.layers.Dense(28, activation=tensorflow.nn.leaky_relu),
-                tensorflow.keras.layers.Dense(6)
+        self.lyr = {
+            "lyr": [
+                tensorflow.keras.layers.RNN([ MyRNNCell(256), MyRNNCell(128), MyRNNCell(64), MyRNNCell(32), MyRNNCell(20) ])
                 ]
+            }
 
     def call(self, inputs):
         logger.log(logger.CYAN + "Model Called" + logger.RESET, "")
@@ -84,9 +96,9 @@ class MyModelV2(tensorflow.keras.Model):
 
         logger.log(logger.CYAN + "Model Called" + logger.RESET, "Layers Executed. Now doing final layer")
 
-        result = self.lyr[0](inputs)
-        for i in range(1, len(self.lyr)):
-            result = self.lyr[i](result)
+        result = self.lyr["lyr"][0](inputs)
+        for i in range(1, len(self.lyr["lyr"])):
+            result = self.lyr["lyr"][i](result)
 
         return result
 
@@ -142,13 +154,11 @@ if(TRAIN == True):
 # beef = tensorflow.concat([1, 2], 0)
 
 model = MyModelV2()
-#mB = DenseModel()
-#model = MyModel(mA, mB)
 
-checkpoint_path = "data/checkpoint.ckpt"
-checkpoint_dir = os.path.dirname(checkpoint_path) 
+#checkpoint_path = "data/checkpoint.ckpt"
+#checkpoint_dir = os.path.dirname(checkpoint_path) 
 
-predictImages = SineWave.Sin_Data()
+predictImages = SineWave.NTest()
 
 if(TRAIN == True):
     logger.log("Train", "Training Start!")
@@ -170,9 +180,13 @@ else:
     model.compile(optimizer='adam',
               loss=tensorflow.keras.losses.Huber(),
               metrics=["accuracy"])
-    model.build((1, 1, 1, 28))
+    model.build((1, 1, 1, 20))
 
 # logger.log("MODEL SUMMARY", str(model.summary()))
 
 prediction = model.predict(predictImages, steps=42)
-print(prediction)
+for p in prediction:
+    msg = ""
+    for i in p:
+        msg += str(i) + ","
+    print(msg)
